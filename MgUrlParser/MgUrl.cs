@@ -9,24 +9,14 @@ namespace MgUrlParser
         public MgUrl(string url)
         {
             Url = url;
+            Parse();
         }
 
-        private string _url;
-
-        public string Url
-        {
-            get => _url;
-            set
-            {
-                _url = value;
-                Parse();
-            }
-        }
-
+        public string Url { get; private set; }
         public string Protocol { get; private set; }
         public string Hostname { get; private set; }
         public string File { get; private set; }
-        public Dictionary<string, string> Parameters { get; private set; }
+        public Dictionary<string, string> Parameters { get; private set; } = new Dictionary<string, string>();
         public string Fragment { get; private set; }
 
 
@@ -59,18 +49,32 @@ namespace MgUrlParser
             var slashSplit = paramsSplit[0].Split("/");
             Hostname = slashSplit[0];
             var file = "";
-            slashSplit.Skip(1).ToList().ForEach(x => file += $"{x}/");
-            file.TrimEnd('/');
-            File = file;
-            var paramsHashSplit = paramsSplit[1].Split("#");
-            var paramsPairs = paramsHashSplit[0].Split("&");
-            foreach (var paramsPair in paramsPairs)
+            slashSplit.Skip(1).ToList().ForEach(x =>
             {
-                var split = paramsPair.Split("=");
-                Parameters.Add(split[0], split[1]);
+                var part = x;
+                if (x.Contains("#"))
+                {
+                    part = x.Split("#")[0];
+                }
+                file += $"{part}/";
+            });
+            file = file.TrimEnd('/');
+            File = file;
+            var hashSplit = Url.Split("#"); //[1] = Fragment
+            if (paramsSplit.Length > 1)
+            {
+                var paramsHashSplit = paramsSplit[1].Split("#");
+                var paramsPairs = paramsHashSplit[0].Split("&");
+                Parameters.Clear();
+                foreach (var paramsPair in paramsPairs)
+                {
+                    var split = paramsPair.Split("=");
+                    Parameters.Add(split[0], split[1]);
+                }
             }
 
-            Fragment = paramsHashSplit[1];
+            if (hashSplit.Length > 1)
+                Fragment = hashSplit[1];
         }
     }
 }
